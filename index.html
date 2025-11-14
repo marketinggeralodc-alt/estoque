@@ -1,0 +1,1402 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle de Pedidos OdontoCompany</title>
+    <!-- Carrega Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Carrega Lucide Icons -->
+    <script src="https://unpkg.com/lucide-icons"></script>
+
+    <style>
+        /* Estilo para a fonte Inter */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Configuração da fonte Inter (para o Tailwind) */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        html { font-family: 'Inter', sans-serif; }
+
+        /* Esconde as páginas por padrão */
+        .page {
+            display: none;
+        }
+
+        /* Classes de status para pedidos */
+        .status-pendente { background-color: #fef9c3; border-left-color: #facc15; } /* Amarelo */
+        .status-aprovado { background-color: #dcfce7; border-left-color: #22c55e; } /* Verde */
+        .status-rejeitado { background-color: #fee2e2; border-left-color: #ef4444; } /* Vermelho */
+        
+        /* Estilos de Impressão */
+        @media print {
+            /* Esconde tudo que não for a área de impressão */
+            body > * {
+                display: none !important;
+            }
+            #print-area, #print-area * {
+                display: block !important;
+                visibility: visible !important;
+            }
+            /* Define o layout da impressão */
+            #print-area {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                font-family: Arial, sans-serif;
+                color: #000;
+            }
+            .print-header {
+                font-size: 24px;
+                font-weight: bold;
+                margin-bottom: 20px;
+                text-align: center;
+            }
+            .print-filial {
+                font-size: 18px;
+                font-weight: bold;
+                margin-bottom: 10px;
+            }
+            .print-table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-bottom: 20px;
+            }
+            .print-table th, .print-table td {
+                border: 1px solid #ccc;
+                padding: 8px;
+                text-align: left;
+            }
+            .print-table th {
+                background-color: #f4f4f4;
+            }
+            .print-footer {
+                margin-top: 30px;
+                font-size: 12px;
+                text-align: center;
+                color: #777;
+            }
+            /* Esconde botões na impressão */
+            .no-print {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+
+    <!-- Container Principal da Aplicação -->
+    <div id="app" class="w-full">
+
+        <!-- Página 1: Selecionar Filial -->
+        <div id="page-select-filial" class="page flex flex-col items-center justify-center min-h-screen p-4">
+            <div class="w-full max-w-md bg-white rounded-lg shadow-xl p-8">
+                <div class="flex justify-center mb-6">
+                    <svg class="h-16 w-16 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-1 4h1m-1 4h1m4-8h1m-1 4h1m-1 4h1" />
+                    </svg>
+                </div>
+                <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Controle de Pedidos</h1>
+                <p class="text-center text-gray-600 mb-8">Selecione sua filial para continuar.</p>
+                <div class="space-y-4">
+                    <button onclick="goToLogin('Patos de Minas')" class="w-full text-lg text-white bg-blue-600 hover:bg-blue-700 py-3 px-4 rounded-lg font-semibold transition-colors shadow-md">Patos de Minas</button>
+                    <button onclick="goToLogin('São Gotardo')" class="w-full text-lg text-white bg-blue-600 hover:bg-blue-700 py-3 px-4 rounded-lg font-semibold transition-colors shadow-md">São Gotardo</button>
+                    <button onclick="goToLogin('Ibiá')" class="w-full text-lg text-white bg-blue-600 hover:bg-blue-700 py-3 px-4 rounded-lg font-semibold transition-colors shadow-md">Ibiá</button>
+                    <button onclick="goToLogin('Guarda dos Ferreiros')" class="w-full text-lg text-white bg-blue-600 hover:bg-blue-700 py-3 px-4 rounded-lg font-semibold transition-colors shadow-md">Guarda dos Ferreiros</button>
+                </div>
+                <!-- NOVO: Link de Login do Admin -->
+                <div class="text-center mt-6">
+                    <a href="#" onclick="goToAdminLogin()" class="text-sm text-gray-500 hover:text-blue-600">Login de Administrador</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Página 2: Login da Filial -->
+        <div id="page-login" class="page flex flex-col items-center justify-center min-h-screen p-4">
+            <div class="w-full max-w-sm bg-white rounded-lg shadow-xl p-8">
+                <button onclick="goToPage('page-select-filial')" class="text-gray-500 hover:text-blue-600 mb-4">&larr; Voltar</button>
+                <h2 class="text-2xl font-bold text-center text-gray-800 mb-4">Login: <span id="login-filial-name" class="text-blue-600"></span></h2>
+                <input type="password" id="filial-password" placeholder="Digite sua senha" class="w-full border border-gray-300 rounded-lg p-3 text-center text-lg mb-4 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                <button onclick="handleFilialLogin()" class="w-full text-lg text-white bg-green-600 hover:bg-green-700 py-3 px-4 rounded-lg font-semibold transition-colors shadow-md">Entrar</button>
+            </div>
+        </div>
+        
+        <!-- NOVO: Página 2.1: Login do Admin -->
+        <div id="page-admin-login" class="page flex flex-col items-center justify-center min-h-screen p-4">
+            <div class="w-full max-w-sm bg-white rounded-lg shadow-xl p-8">
+                <button onclick="goToPage('page-select-filial')" class="text-gray-500 hover:text-blue-600 mb-4">&larr; Voltar</button>
+                <h2 class="text-2xl font-bold text-center text-gray-800 mb-4">Login de <span class="text-red-600">Administrador</span></h2>
+                <input type="password" id="admin-password" placeholder="Digite a senha mestre" class="w-full border border-gray-300 rounded-lg p-3 text-center text-lg mb-4 focus:ring-2 focus:ring-red-500 focus:outline-none">
+                <button onclick="handleAdminLogin()" class="w-full text-lg text-white bg-red-600 hover:bg-red-700 py-3 px-4 rounded-lg font-semibold transition-colors shadow-md">Entrar</button>
+            </div>
+        </div>
+
+        <!-- Página 3: Menu Principal (Filial) -->
+        <div id="page-menu" class="page container mx-auto p-4 md:p-8 max-w-4xl">
+            <header class="flex justify-between items-center mb-8">
+                <h1 class="text-3xl font-bold text-blue-600">Filial: <span id="menu-filial-name"></span></h1>
+                <button onclick="logout()" class="text-gray-600 hover:text-red-600 font-semibold py-2 px-4 rounded-lg border border-gray-300 hover:border-red-500 transition-colors">Sair</button>
+            </header>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white rounded-lg shadow-xl p-6 flex flex-col items-center text-center hover:shadow-2xl transition-shadow">
+                    <i data-lucide="edit" class="h-16 w-16 text-blue-600 mb-4"></i>
+                    <h2 class="text-2xl font-semibold mb-2">Gerenciar Estoque</h2>
+                    <p class="text-gray-600 mb-4">Atualize seu estoque atual e quantidades mínimas.</p>
+                    <button onclick="goToPage('page-manage-stock')" class="w-full text-lg text-white bg-blue-600 hover:bg-blue-700 py-3 px-4 rounded-lg font-semibold transition-colors shadow-md">Acessar</button>
+                </div>
+                <div class="bg-white rounded-lg shadow-xl p-6 flex flex-col items-center text-center hover:shadow-2xl transition-shadow">
+                    <i data-lucide="shopping-cart" class="h-16 w-16 text-green-600 mb-4"></i>
+                    <h2 class="text-2xl font-semibold mb-2">Fazer Pedido</h2>
+                    <p class="text-gray-600 mb-4">Crie um novo pedido com base no seu estoque.</p>
+                    <button onclick="goToPage('page-order-form')" class="w-full text-lg text-white bg-green-600 hover:bg-green-700 py-3 px-4 rounded-lg font-semibold transition-colors shadow-md">Acessar</button>
+                </div>
+                <div class="bg-white rounded-lg shadow-xl p-6 flex flex-col items-center text-center md:col-span-2 hover:shadow-2xl transition-shadow">
+                    <i data-lucide="history" class="h-16 w-16 text-purple-600 mb-4"></i>
+                    <h2 class="text-2xl font-semibold mb-2">Histórico de Pedidos</h2>
+                    <p class="text-gray-600 mb-4">Veja todos os pedidos que sua filial já fez.</p>
+                    <button onclick="renderHistory()" class="w-full md:w-1/2 text-lg text-white bg-purple-600 hover:bg-purple-700 py-3 px-4 rounded-lg font-semibold transition-colors shadow-md">Acessar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Página 4: Gerenciar Estoque -->
+        <div id="page-manage-stock" class="page container mx-auto p-4 md:p-8 max-w-6xl">
+            <button onclick="goToPage('page-menu')" class="mb-6 text-gray-600 hover:text-blue-600 font-semibold py-2 px-4 rounded-lg border border-gray-300 hover:border-blue-500 transition-colors">&larr; Voltar ao Menu</button>
+            <h1 class="text-3xl font-bold text-gray-800 mb-6">Gerenciar Estoque (<span id="stock-filial-name" class="text-blue-600"></span>)</h1>
+            
+            <div class="mb-4 flex items-center bg-white p-2 rounded-lg shadow">
+                <i data-lucide="search" class="text-gray-400 mr-2"></i>
+                <input type="text" id="stock-search" onkeyup="filterTable('stock-search', 'stock-table-body')" placeholder="Filtrar por nome..." class="w-full p-2 border-none focus:ring-0">
+            </div>
+
+            <div class="overflow-x-auto bg-white rounded-lg shadow-xl">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-100">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Produto</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Mínimo Mensal</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Estoque Atual</th>
+                        </tr>
+                    </thead>
+                    <tbody id="stock-table-body" class="bg-white divide-y divide-gray-200">
+                        <!-- Linhas de estoque serão injetadas aqui -->
+                    </tbody>
+                </table>
+            </div>
+            <button onclick="saveStock()" class="mt-8 w-full text-xl text-white bg-green-600 hover:bg-green-700 py-4 px-6 rounded-lg font-semibold transition-colors shadow-lg">
+                <i data-lucide="check" class="inline-block -mt-1 mr-2"></i> Salvar Alterações
+            </button>
+        </div>
+
+        <!-- Página 5: Fazer Pedido -->
+        <div id="page-order-form" class="page container mx-auto p-4 md:p-8 max-w-6xl">
+            <button onclick="goToPage('page-menu')" class="mb-6 text-gray-600 hover:text-blue-600 font-semibold py-2 px-4 rounded-lg border border-gray-300 hover:border-blue-500 transition-colors">&larr; Voltar ao Menu</button>
+            <h1 class="text-3xl font-bold text-gray-800 mb-6">Fazer Pedido (<span id="order-filial-name" class="text-blue-600"></span>)</h1>
+            
+            <div class="mb-4 flex items-center bg-white p-2 rounded-lg shadow">
+                <i data-lucide="search" class="text-gray-400 mr-2"></i>
+                <input type="text" id="order-search" onkeyup="filterTable('order-search', 'order-table-body')" placeholder="Filtrar por nome..." class="w-full p-2 border-none focus:ring-0">
+            </div>
+
+            <div class="overflow-x-auto bg-white rounded-lg shadow-xl">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-100">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Produto</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Mínimo</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Estoque</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider text-red-600">Sugerido</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">A Pedir</th>
+                        </tr>
+                    </thead>
+                    <tbody id="order-table-body" class="bg-white divide-y divide-gray-200">
+                        <!-- Linhas de pedido serão injetadas aqui -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-xl p-6 mt-8">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-4">Produtos Extras</h2>
+                <p class="text-gray-600 mb-4">Adicione aqui produtos que não estão na lista principal (ex: itens novos, promoções, etc.), um por linha.</p>
+                <textarea id="extra-items-textarea" rows="5" class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Ex: Broca Super-X (DentalABC) - 10 unidades"></textarea>
+            </div>
+
+            <button onclick="reviewOrder()" class="mt-8 w-full text-xl text-white bg-blue-600 hover:bg-blue-700 py-4 px-6 rounded-lg font-semibold transition-colors shadow-lg">
+                Revisar Pedido <i data-lucide="arrow-right" class="inline-block -mt-1 ml-2"></i>
+            </button>
+        </div>
+
+        <!-- Página 6: Revisar Pedido -->
+        <div id="page-review-order" class="page container mx-auto p-4 md:p-8 max-w-4xl">
+            <button onclick="goToPage('page-order-form')" class="mb-6 text-gray-600 hover:text-blue-600 font-semibold py-2 px-4 rounded-lg border border-gray-300 hover:border-blue-500 transition-colors">&larr; Voltar e Editar</button>
+            <h1 class="text-3xl font-bold text-gray-800 mb-6">Revisar Pedido</h1>
+            <div id="review-summary-container" class="bg-white rounded-lg shadow-xl p-6">
+                <!-- Conteúdo da revisão será injetado aqui -->
+            </div>
+            
+            <div class="mt-8 flex flex-col sm:flex-row gap-4">
+                <button onclick="printOrder(currentOrder, currentExtraItems)" class="w-full sm:w-auto flex-1 text-lg text-blue-600 bg-white border border-blue-600 hover:bg-blue-50 py-3 px-4 rounded-lg font-semibold transition-colors shadow-md no-print">
+                    <i data-lucide="printer" class="inline-block -mt-1 mr-2"></i> Imprimir
+                </button>
+                <button onclick="submitOrder()" class="w-full sm:w-auto flex-1 text-lg text-white bg-green-600 hover:bg-green-700 py-3 px-4 rounded-lg font-semibold transition-colors shadow-md no-print">
+                    <i data-lucide="send" class="inline-block -mt-1 mr-2"></i> Enviar Pedido
+                </button>
+            </div>
+        </div>
+
+        <!-- Página 7: Histórico de Pedidos (Filial) -->
+        <div id="page-history" class="page container mx-auto p-4 md:p-8 max-w-5xl">
+            <button onclick="goToPage('page-menu')" class="mb-6 text-gray-600 hover:text-blue-600 font-semibold py-2 px-4 rounded-lg border border-gray-300 hover:border-blue-500 transition-colors">&larr; Voltar ao Menu</button>
+            <h1 class="text-3xl font-bold text-gray-800 mb-6">Histórico de Pedidos (<span id="history-filial-name" class="text-blue-600"></span>)</h1>
+            <div id="history-list-container" class="space-y-6">
+                <!-- Cartões de histórico serão injetados aqui -->
+            </div>
+        </div>
+        
+        <!-- NOVO: Página 8: Painel do Administrador -->
+        <div id="page-admin-panel" class="page container mx-auto p-4 md:p-8 max-w-6xl">
+            <header class="flex justify-between items-center mb-8">
+                <h1 class="text-3xl font-bold text-red-600">Painel de Administrador</h1>
+                <button onclick="logout()" class="text-gray-600 hover:text-red-600 font-semibold py-2 px-4 rounded-lg border border-gray-300 hover:border-red-500 transition-colors">Sair</button>
+            </header>
+            
+            <h2 class="text-2xl font-semibold text-gray-800 mb-6">Pedidos Pendentes de Aprovação</h2>
+            
+            <div id="admin-list-container" class="space-y-6">
+                <!-- Pedidos para aprovação serão injetados aqui -->
+                <p id="no-pending-orders" class="text-gray-600 text-center text-lg py-10 bg-white rounded-lg shadow-md">Nenhum pedido pendente no momento.</p>
+            </div>
+        </div>
+
+    </div> <!-- Fim da div #app -->
+
+    <!-- Modal de Loading -->
+    <div id="loading-overlay" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center" style="display: none; z-index: 9998;">
+        <div class="text-white text-lg flex flex-col items-center">
+            <svg class="animate-spin h-10 w-10 text-white mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Carregando...
+        </div>
+    </div>
+
+    <!-- Modal de Alerta Customizado -->
+    <div id="alert-box" class="fixed top-5 right-5 bg-red-600 text-white p-4 rounded-lg shadow-xl" style="display: none; z-index: 9999;">
+        <span id="alert-message"></span>
+    </div>
+
+    <!-- Área de Impressão (Oculta) -->
+    <div id="print-area" class="hidden"></div>
+    
+    <!-- NOVO: Modal de Edição do Admin -->
+    <div id="modal-admin-edit" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4" style="display: none; z-index: 9990;">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col">
+            <header class="flex justify-between items-center p-4 border-b">
+                <h2 class="text-2xl font-semibold text-gray-800">Editar Pedido</h2>
+                <button onclick="closeEditModal()" class="text-gray-500 hover:text-red-600">
+                    <i data-lucide="x" class="h-8 w-8"></i>
+                </button>
+            </header>
+            
+            <div id="modal-edit-content" class="p-6 overflow-y-auto">
+                <h3 class="text-lg font-semibold mb-2">Itens Principais:</h3>
+                <div id="modal-edit-items-table" class="mb-4">
+                    <!-- Tabela de itens editáveis será injetada aqui -->
+                </div>
+                
+                <h3 class="text-lg font-semibold mb-2">Itens Extras:</h3>
+                <textarea id="modal-edit-extra-items" rows="4" class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:outline-none"></textarea>
+            </div>
+            
+            <footer class="p-4 bg-gray-50 border-t flex justify-end gap-4">
+                <button onclick="closeEditModal()" class="text-gray-600 bg-white border border-gray-300 hover:bg-gray-100 py-2 px-6 rounded-lg font-semibold transition-colors">
+                    Cancelar
+                </button>
+                <button onclick="saveOrderEdit()" class="text-white bg-blue-600 hover:bg-blue-700 py-2 px-6 rounded-lg font-semibold transition-colors shadow-md">
+                    Salvar e Aprovar
+                </button>
+            </footer>
+        </div>
+    </div>
+
+
+    <!-- Scripts -->
+    <!-- 
+      CORREÇÃO: O script que estava aqui (<script>lucide.createIcons()</script>) foi removido.
+      Ele estava causando um erro de "race condition", tentando rodar ANTES da biblioteca de ícones (lucide.js)
+      ser totalmente carregada.
+      A inicialização dos ícones agora é feita de forma segura dentro da função `goToPage`
+      no script de módulo abaixo.
+    -->
+    <script type="module">
+        // Importações do Firebase
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, addDoc, updateDoc, collection, query, where, getDocs, Timestamp, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- Configuração ---
+        const firebaseConfigStr = typeof __firebase_config !== 'undefined' ? __firebase_config : null;
+        const isInSimulationMode = !firebaseConfigStr;
+        let firebaseConfig = {};
+
+        if (!isInSimulationMode) {
+            firebaseConfig = JSON.parse(firebaseConfigStr);
+        } else {
+            console.warn("MODO DE SIMULAÇÃO ATIVO. Nenhum dado será salvo no banco de dados.");
+        }
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        
+        const FILIAL_PASSWORDS = {
+            'Patos de Minas': '123',
+            'São Gotardo': '123',
+            'Ibiá': '123',
+            'Guarda dos Ferreiros': '123'
+        };
+        
+        // NOVO: Senha do Admin
+        const ADMIN_PASSWORD = 'admin123';
+
+        let app, db, auth, userId;
+        let selectedFilial = null;
+        let filialInventory = {}; // { "Produto A": { minimo: 1, estoque: 0 }, ... }
+        let currentPage = 'page-select-filial';
+        
+        // Variáveis de estado do pedido
+        let currentOrder = {};
+        let currentExtraItems = "";
+        
+        // NOVO: Variável de estado da edição admin
+        let adminEditingOrderId = null;
+
+        // --- Base de Dados de Produtos (CATÁLOGO MESTRE) ---
+        const productMap = new Map();
+        [
+            // IBIÁ (Amostra - a planilha de Ibiá tem mais de 200 itens)
+            {"descricao": "Ácido Fluorídrico", "categoria": "DENTÍSTICA", "marca": "ALLPRIME"},
+            {"descricao": "Ácido Fosfórico 37%", "categoria": "DENTÍSTICA", "marca": "ALLPRIME"},
+            {"descricao": "Acrílica AltoPolimerizante 61", "categoria": "DENTÍSTICA", "marca": "DENCOR"},
+            {"descricao": "Acrílica AltoPolimerizante 62", "categoria": "DENTÍSTICA", "marca": "DENCOR"},
+            {"descricao": "Acrílica AltoPolimerizante 66", "categoria": "DENTÍSTICA", "marca": "DENCOR"},
+            {"descricao": "Acrílica AltoPolimerizante 69", "categoria": "DENTÍSTICA", "marca": "DENCOR"},
+            {"descricao": "Adesivo autocondicomante", "categoria": "DENTÍSTICA", "marca": "SOLVENTUM"},
+            {"descricao": "Adesivo bond", "categoria": "DENTÍSTICA", "marca": "BIODINAMIC"},
+            {"descricao": "AGULHA CURTA", "categoria": "DIVERSOS", "marca": "ALLPRIME"},
+            {"descricao": "AGULHA LONGA", "categoria": "DIVERSOS", "marca": "ALLPRIME"},
+            {"descricao": "ALGINATO ALVAGEL", "categoria": "DIVERSOS", "marca": "DENTSPLY"},
+            {"descricao": "ALGODAO ROLETE", "categoria": "DIVERSOS", "marca": "SSPLUS"},
+            {"descricao": "Top Dam", "categoria": "DENTÍSTICA", "marca": "ALLPLAN"},
+            {"descricao": "TOUCA BRANCA", "categoria": "DIVERSOS", "marca": "DESCARPAK"},
+            {"descricao": "TRICESOL", "categoria": "ENDODONTIA", "marca": "BIODINAMICA"},
+            
+            // GUARDA DOS FERREIROS
+            {"descricao": "ALPHACAINA", "categoria": "CIRURGIA", "marca": "DFL"},
+            {"descricao": "ARTICAINE", "categoria": "CIRURGIA", "marca": "DFL"},
+            {"descricao": "BENSONTOP - ANESTÉSICO TÓPICO", "categoria": "CIRURGIA", "marca": "DFL"},
+            {"descricao": "FIO DE SUTURA 3-0 NYLON", "categoria": "CIRURGIA", "marca": "PROCARE"},
+            {"descricao": "FIO DE SUTURA 4-0 NYLON", "categoria": "CIRURGIA", "marca": "PROCARE"},
+            {"descricao": "HEMOSPOM", "categoria": "CIRURGIA", "marca": "MAQUIRA"},
+            {"descricao": "LÂMINA DE BISTURI Nº12", "categoria": "CIRURGIA", "marca": "SOLIDOR"},
+            {"descricao": "LÂMINA DE BISTURI Nº15", "categoria": "CIRURGIA", "marca": "SOLIDOR"},
+            {"descricao": "LIDOSTESIN (LIDOCAIÍNA)", "categoria": "CIRURGIA", "marca": "SSWHITE"},
+            {"descricao": "LUVA CIRURGICA 6,5", "categoria": "CIRURGIA", "marca": "DESCARPAC"},
+            {"descricao": "LUVA CIRURGICA 7.0", "categoria": "CIRURGIA", "marca": "DESCARPAC"},
+            {"descricao": "PASTA DENTAL", "categoria": "DENTISTA", "marca": ""},
+            {"descricao": "TESOURA", "categoria": "DENTISTA", "marca": ""},
+            {"descricao": "CARPULE", "categoria": "DENTISTA", "marca": ""},
+            {"descricao": "FÓRCEPS 17", "categoria": "DENTISTA", "marca": ""},
+            {"descricao": "ANESTÉSICO MEPIVACAINA SEM VASO", "categoria": "DENTISTA", "marca": ""},
+
+            // SÃO GOTARDO
+            {"descricao": "LIDOSTESIN", "categoria": "CIRURGIA", "marca": "SSPLUS"},
+            {"descricao": "SORO FISIOLOGICO 500ML", "categoria": "CIRURGIA", "marca": "-"},
+            {"descricao": "SUGADOR CIRURGICO caixa com 40 unidades", "categoria": "CIRURGIA", "marca": "MAQUIRA"},
+            {"descricao": "BENSONTOP", "categoria": "CIRURGIA", "marca": "DFL"},
+            {"descricao": "MEPVACAINES VASO", "categoria": "CIRURGIA", "marca": "DFL"},
+            {"descricao": "SOLUÇÃO HEMOSTÁTICA", "categoria": "CIRURGIA", "marca": "MAQUIRA"},
+            {"descricao": "Adesivo MONO ADAPER SINGLE BOND 3 M", "categoria": "DENTÍSTICA", "marca": "SOLVENTRUM"},
+            {"descricao": "ELASTICO INTRAORAL MÉDIO 1/8", "categoria": "ORTODONTIA", "marca": "MORELLI"},
+            {"descricao": "ELASTICO INTRAORAL MÉDIO 5/16", "categoria": "ORTODONTIA", "marca": "MORELLI"},
+            {"descricao": "ELASTICO INTRAORAL PESADO 5/16", "categoria": "ORTODONTIA", "marca": "MORELLI"},
+            {"descricao": "ELASTICO INTRAORAL MÉDIO 3/16", "categoria": "ORTODONTIA", "marca": "MORELLI"},
+            {"descricao": "FIO AÇO 16 SUPERIOR", "categoria": "ORTODONTIA", "marca": "MORELLI"},
+
+            // PATOS DE MINAS
+            {"descricao": "ANESTÉSICO ARTICAINE", "categoria": "CIRURGIA", "marca": "DFL"},
+            {"descricao": "FIO DE SUTURA 3-0 NLON", "categoria": "CIRURGIA", "marca": "PROCARE"},
+            {"descricao": "HEMOLIQ", "categoria": "CIRURGIA", "marca": "MAQUIRA"},
+            {"descricao": "HEMOSPON - ESPONJA HEMOSTÁTICA", "categoria": "CIRURGIA", "marca": "MAQUIRA"},
+            {"descricao": "LUVA CIRURGICA 7,5", "categoria": "CIRURGIA", "marca": "DESCARPAK"},
+            {"descricao": "LUVA CIRURGICA ESTÉRIL 6,5", "categoria": "CIRURGIA", "marca": "DESCARPAC"},
+            {"descricao": "FIO NITI 16X22 SUPERIOR 100UN", "categoria": "ORTODONTIA", "marca": "MORELLI"},
+            {"descricao": "FIO NITI 17X25 INFERIOR 100UN", "categoria": "ORTODONTIA", "marca": "MORELLI"},
+            {"descricao": "FIO NITI 18 SUPERIOR 100UN", "categoria": "ORTODONTIA", "marca": "MORELLI"},
+            
+            // ORTODONTIA (Comum)
+            {"descricao": "BRACKET ROTH 0,22", "categoria": "ORTODONTIA", "marca": "MORELLI" },
+            {"descricao": "FIO NITI 12 SUPERIOR", "categoria": "ORTODONTIA", "marca": "MORELLI" },
+            {"descricao": "FIO NITI 14 INFERIOR", "categoria": "ORTODONTIA", "marca": "MORELLI" }
+        ].forEach(item => {
+            if (!productMap.has(item.descricao)) {
+                productMap.set(item.descricao, {
+                    descricao: item.descricao,
+                    categoria: item.categoria || 'DIVERSOS',
+                    marca: item.marca || ''
+                });
+            }
+        });
+        
+        const allProducts = Array.from(productMap.values()).sort((a, b) => a.descricao.localeCompare(b.descricao));
+
+        // --- Mínimos Padrão por Filial (Extraído das planilhas) ---
+        const DEFAULT_MINIMUMS = {
+            'Ibiá': {
+                "Ácido Fluorídrico": 2, "Ácido Fosfórico 37%": 7, "Acrílica AltoPolimerizante 61": 1,
+                "Acrílica AltoPolimerizante 62": 1, "Acrílica AltoPolimerizante 66": 1, "Acrílica AltoPolimerizante 69": 1,
+                "Adesivo autocondicomante": 1, "Adesivo bond": 4, "AGULHA CURTA": 2, "AGULHA LONGA": 1,
+                "ALGINATO ALVAGEL": 3, "ALGODAO ROLETE": 15, "Top Dam": 2, "TOUCA BRANCA": 1, "TRICESOL": 1
+            },
+            'Guarda dos Ferreiros': {
+                "AGULHA CURTA": 2, "AGULHA LONGA": 2, "ALPHACAINA": 3, "ARTICAINE": 3, "BENSONTOP - ANESTÉSICO TÓPICO": 2,
+                "FIO DE SUTURA 3-0 NYLON": 3, "FIO DE SUTURA 4-0 NYLON": 3, "HEMOSPOM": 1, "LÂMINA DE BISTURI Nº12": 1,
+                "LÂMINA DE BISTURI Nº15": 1, "LIDOSTESIN (LIDOCAIÍNA)": 5, "LUVA CIRURGICA 6,5": 20, "LUVA CIRURGICA 7.0": 10,
+                "PASTA DENTAL": 20, "TESOURA": 10, "CARPULE": 10, "FÓRCEPS 17": 5, "ANESTÉSICO MEPIVACAINA SEM VASO": 1
+            },
+            'São Gotardo': {
+                "ALPHACAINA": 3, "ARTICAINE": 3, "FIO DE SUTURA 4-0 NYLON": 5, "LÂMINA DE BISTURI Nº15": 3,
+                "LIDOSTESIN": 8, "LUVA CIRURGICA 6,5": 50, "SORO FISIOLOGICO 500ML": 10, "SUGADOR CIRURGICO caixa com 40 unidades": 3,
+                "BENSONTOP": 2, "HEMOSPOM": 1, "MEPVACAINES VASO": 1, "SOLUÇÃO HEMOSTÁTICA": 1,
+                "Adesivo MONO ADAPER SINGLE BOND 3 M": 3, "ELASTICO INTRAORAL MÉDIO 1/8": 2, "ELASTICO INTRAORAL MÉDIO 5/16": 2,
+                "ELASTICO INTRAORAL PESADO 5/16": 2, "ELASTICO INTRAORAL MÉDIO 3/16": 2, "FIO AÇO 16 SUPERIOR": 3
+            },
+            'Patos de Minas': {
+                "AGULHA CURTA": 2, "AGULHA LONGA": 1, "ALPHACAINA": 4, "ANESTÉSICO ARTICAINE": 3, "BENSONTOP": 3,
+                "FIO DE SUTURA 3-0 NLON": 4, "FIO DE SUTURA 4-0 NYLON": 2, "HEMOLIQ": 2, "HEMOSPON - ESPONJA HEMOSTÁTICA": 2,
+                "LÂMINA DE BISTURI Nº12": 2, "LÂMINA DE BISTURI Nº15": 3, "LUVA CIRURGICA 7,5": 20, "LUVA CIRURGICA ESTÉRIL 6,5": 10, 
+                "FIO NITI 16X22 SUPERIOR 100UN": 1, "FIO NITI 17X25 INFERIOR 100UN": 1, "FIO NITI 18 SUPERIOR 100UN": 1
+            }
+        };
+
+
+        // --- Funções Auxiliares ---
+        function showLoading(show) {
+            document.getElementById('loading-overlay').style.display = show ? 'flex' : 'none';
+        }
+
+        function showAlert(message, duration = 3000) {
+            const alertBox = document.getElementById('alert-box');
+            document.getElementById('alert-message').textContent = message;
+            alertBox.style.display = 'block';
+            setTimeout(() => { alertBox.style.display = 'none'; }, duration);
+        }
+
+        window.goToPage = (pageId) => {
+            document.querySelectorAll('#app > .page').forEach(page => page.style.display = 'none');
+            
+            const targetPage = document.getElementById(pageId);
+            if (targetPage) {
+                // Se a página usa 'flex' (como login/seleção), mantenha 'flex'
+                if (targetPage.classList.contains('flex')) {
+                    targetPage.style.display = 'flex';
+                } else {
+                    targetPage.style.display = 'block'; // Senão, use 'block'
+                }
+            }
+            
+            currentPage = pageId;
+            window.scrollTo(0, 0);
+            
+            // Recarrega os ícones na nova página
+            if (window.lucide) lucide.createIcons();
+
+            // Ações específicas ao carregar a página
+            if (pageId === 'page-manage-stock') {
+                renderStockTable();
+            }
+            if (pageId === 'page-order-form') {
+                renderOrderTable();
+            }
+        }
+
+        function groupProducts(productList) {
+            const grouped = {};
+            productList.forEach(prod => {
+                const cat = prod.categoria || 'DIVERSOS';
+                if (!grouped[cat]) grouped[cat] = [];
+                grouped[cat].push(prod);
+            });
+            return grouped;
+        }
+
+        window.filterTable = (inputId, tableBodyId) => {
+            const filter = document.getElementById(inputId).value.toUpperCase();
+            const tableBody = document.getElementById(tableBodyId);
+            const rows = tableBody.getElementsByTagName('tr');
+
+            for (let i = 0; i < rows.length; i++) {
+                const row = rows[i];
+                if (row.classList.contains('category-header')) {
+                    row.style.display = ""; // Sempre mostra cabeçalho de categoria
+                } else {
+                    const productNameCell = row.getElementsByTagName('td')[0];
+                    if (productNameCell) {
+                        const productName = productNameCell.textContent || productNameCell.innerText;
+                        if (productName.toUpperCase().indexOf(filter) > -1) {
+                            row.style.display = "";
+                        } else {
+                            row.style.display = "none";
+                        }
+                    }
+                }
+            }
+        }
+        
+        function formatFirebaseTimestamp(timestamp) {
+            if (!timestamp) return 'Data desconhecida';
+            // Converte Timestamp do Firebase para Date do JS
+            const jsDate = timestamp.toDate();
+            return jsDate.toLocaleString('pt-BR', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+        
+        // --- Lógica de Autenticação e Inicialização ---
+        async function initializeFirebase() {
+            if (isInSimulationMode) {
+                console.log("Iniciando em modo de simulação...");
+                showLoading(false);
+                goToPage('page-select-filial');
+                return;
+            }
+
+            try {
+                showLoading(true);
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                setLogLevel('Debug'); // Para logs de debug
+
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        console.log("Firebase autenticado com UID:", userId);
+                        showLoading(false);
+                        goToPage('page-select-filial');
+                    } else {
+                        console.error("Falha na autenticação anônima.");
+                        showAlert("Erro ao conectar. Tente recarregar a página.");
+                    }
+                });
+            } catch (error) {
+                console.error("Erro ao inicializar Firebase:", error);
+                showAlert("Erro crítico ao carregar a aplicação.");
+            }
+        }
+
+        window.goToLogin = (filial) => {
+            selectedFilial = filial;
+            document.getElementById('login-filial-name').textContent = filial;
+            document.getElementById('filial-password').value = "";
+            goToPage('page-login');
+        }
+
+        window.handleFilialLogin = () => {
+            const pass = document.getElementById('filial-password').value;
+            if (pass === FILIAL_PASSWORDS[selectedFilial]) {
+                document.getElementById('menu-filial-name').textContent = selectedFilial;
+                document.getElementById('stock-filial-name').textContent = selectedFilial;
+                document.getElementById('order-filial-name').textContent = selectedFilial;
+                document.getElementById('history-filial-name').textContent = selectedFilial;
+                
+                // Carrega os dados da filial (inventário)
+                loadFilialData();
+                goToPage('page-menu');
+            } else {
+                showAlert("Senha incorreta!");
+            }
+        }
+        
+        // NOVO: Funções de Login Admin
+        window.goToAdminLogin = () => {
+            document.getElementById('admin-password').value = "";
+            goToPage('page-admin-login');
+        }
+
+        window.handleAdminLogin = () => {
+            const pass = document.getElementById('admin-password').value;
+            if (pass === ADMIN_PASSWORD) {
+                // Carrega o painel do admin
+                loadAdminPanel();
+                goToPage('page-admin-panel');
+            } else {
+                showAlert("Senha de admin incorreta!");
+            }
+        }
+
+        window.logout = () => {
+            selectedFilial = null;
+            filialInventory = {};
+            currentOrder = {};
+            currentExtraItems = "";
+            goToPage('page-select-filial');
+        }
+
+        // --- Lógica de Dados (Inventário) ---
+        
+        async function loadFilialData() {
+            showLoading(true);
+            
+            // Limpa dados de pedidos anteriores
+            currentOrder = {};
+            currentExtraItems = "";
+            document.getElementById('extra-items-textarea').value = "";
+
+            const inventoryDocPath = `artifacts/${appId}/public/data/inventarios/${selectedFilial}`;
+            
+            if (isInSimulationMode) {
+                console.log("SIMULAÇÃO: Carregando dados da filial " + selectedFilial);
+                const localData = localStorage.getItem(`sim_inventory_${selectedFilial}`);
+                if (localData) {
+                    filialInventory = JSON.parse(localData);
+                } else {
+                    // Semeia o inventário local com os mínimos padrão
+                    filialInventory = {};
+                    const filialDefaults = DEFAULT_MINIMUMS[selectedFilial] || {};
+                    allProducts.forEach(prod => {
+                        filialInventory[prod.descricao] = { 
+                            minimo: filialDefaults[prod.descricao] || 0,
+                            estoque: 0 
+                        };
+                    });
+                }
+                setTimeout(() => {
+                    showLoading(false);
+                }, 500);
+                return;
+            }
+
+            try {
+                const docRef = doc(db, inventoryDocPath);
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists()) {
+                    filialInventory = docSnap.data().produtos || {};
+                } else {
+                    console.log("Primeiro login da filial, criando inventário inicial com mínimos da planilha...");
+                    // Semeia o banco de dados com os mínimos padrão da planilha
+                    filialInventory = {};
+                    const filialDefaults = DEFAULT_MINIMUMS[selectedFilial] || {};
+                    allProducts.forEach(prod => {
+                        filialInventory[prod.descricao] = { 
+                            minimo: filialDefaults[prod.descricao] || 0, 
+                            estoque: 0
+                        }; 
+                    });
+                    await setDoc(docRef, { 
+                        filial: selectedFilial,
+                        produtos: filialInventory,
+                        criadoEm: Timestamp.now()
+                    });
+                }
+                
+                // Sincroniza o inventário com a lista mestre (adiciona novos produtos)
+                let needsUpdate = false;
+                allProducts.forEach(prod => {
+                    if (!filialInventory[prod.descricao]) {
+                        filialInventory[prod.descricao] = { minimo: 0, estoque: 0 };
+                        needsUpdate = true;
+                    }
+                });
+
+                if (needsUpdate) {
+                    console.log("Sincronizando inventário com novos produtos da lista mestre...");
+                    await setDoc(docRef, { produtos: filialInventory }, { merge: true });
+                }
+
+            } catch (error) {
+                console.error("Erro ao carregar dados da filial:", error);
+                showAlert("Erro ao carregar dados do inventário.");
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // --- Lógica de "Gerenciar Estoque" ---
+        
+        function renderStockTable() {
+            const tableBody = document.getElementById('stock-table-body');
+            tableBody.innerHTML = '';
+            const groupedProducts = groupProducts(allProducts);
+
+            for (const categoria in groupedProducts) {
+                // Linha de Cabeçalho da Categoria
+                tableBody.innerHTML += `
+                    <tr class="bg-gray-200 category-header sticky top-0">
+                        <td colspan="3" class="px-6 py-3 text-left text-sm font-bold text-gray-700 uppercase">
+                            ${categoria}
+                        </td>
+                    </tr>
+                `;
+                // Linhas de Produto
+                groupedProducts[categoria].forEach(prod => {
+                    const item = filialInventory[prod.descricao] || { minimo: 0, estoque: 0 };
+                    tableBody.innerHTML += `
+                        <tr data-product-name="${prod.descricao}">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm font-medium text-gray-900">${prod.descricao}</div>
+                                <div class="text-sm text-gray-500">${prod.marca}</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <input type="number" min="0" value="${item.minimo}" 
+                                       class="stock-minimo w-24 border border-gray-300 rounded-lg p-2 text-center"
+                                       data-product="${prod.descricao}">
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <input type="number" min="0" value="${item.estoque}" 
+                                       class="stock-estoque w-24 border border-gray-300 rounded-lg p-2 text-center"
+                                       data-product="${prod.descricao}">
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
+        }
+
+        window.saveStock = async () => {
+            showLoading(true);
+            
+            // Lê os valores da tabela
+            document.querySelectorAll('#stock-table-body .stock-minimo').forEach(input => {
+                const product = input.dataset.product;
+                filialInventory[product].minimo = parseInt(input.value) || 0;
+            });
+            document.querySelectorAll('#stock-table-body .stock-estoque').forEach(input => {
+                const product = input.dataset.product;
+                filialInventory[product].estoque = parseInt(input.value) || 0;
+            });
+            
+            const inventoryDocPath = `artifacts/${appId}/public/data/inventarios/${selectedFilial}`;
+
+            if (isInSimulationMode) {
+                console.log("SIMULAÇÃO: Salvando estoque...", filialInventory);
+                localStorage.setItem(`sim_inventory_${selectedFilial}`, JSON.stringify(filialInventory));
+                setTimeout(() => {
+                    showLoading(false);
+                    showAlert("Estoque salvo (simulação)!", 2000);
+                    goToPage('page-menu');
+                }, 500);
+                return;
+            }
+
+            try {
+                const docRef = doc(db, inventoryDocPath);
+                await setDoc(docRef, { produtos: filialInventory }, { merge: true });
+                showAlert("Estoque atualizado com sucesso!", 2000);
+                goToPage('page-menu');
+            } catch (error) {
+                console.error("Erro ao salvar estoque:", error);
+                showAlert("Erro ao salvar o estoque.");
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // --- Lógica de "Fazer Pedido" ---
+        
+        function renderOrderTable() {
+            const tableBody = document.getElementById('order-table-body');
+            tableBody.innerHTML = '';
+            const groupedProducts = groupProducts(allProducts);
+
+            for (const categoria in groupedProducts) {
+                tableBody.innerHTML += `
+                    <tr class="bg-gray-200 category-header sticky top-0">
+                        <td colspan="5" class="px-6 py-3 text-left text-sm font-bold text-gray-700 uppercase">
+                            ${categoria}
+                        </td>
+                    </tr>
+                `;
+                
+                groupedProducts[categoria].forEach(prod => {
+                    const item = filialInventory[prod.descricao] || { minimo: 0, estoque: 0 };
+                    const sugerido = Math.max(0, item.minimo - item.estoque);
+                    
+                    tableBody.innerHTML += `
+                        <tr data-product-name="${prod.descricao}">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm font-medium text-gray-900">${prod.descricao}</div>
+                                <div class="text-sm text-gray-500">${prod.marca}</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${item.minimo}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${item.estoque}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-bold ${sugerido > 0 ? 'text-red-600' : 'text-gray-700'}">${sugerido}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <input type="number" min="0" value="${sugerido}" 
+                                       class="order-quantity w-24 border border-gray-300 rounded-lg p-2 text-center"
+                                       data-product="${prod.descricao}">
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
+        }
+
+        window.reviewOrder = () => {
+            currentOrder = {};
+            document.querySelectorAll('.order-quantity').forEach(input => {
+                const product = input.dataset.product;
+                const quantity = parseInt(input.value) || 0;
+                if (quantity > 0) {
+                    currentOrder[product] = quantity;
+                }
+            });
+
+            currentExtraItems = document.getElementById('extra-items-textarea').value;
+
+            // Renderiza a revisão
+            const container = document.getElementById('review-summary-container');
+            container.innerHTML = `<h2 class="text-2xl font-semibold mb-4 text-blue-600">Filial: ${selectedFilial}</h2>`;
+            
+            if (Object.keys(currentOrder).length > 0) {
+                container.innerHTML += '<h3 class="text-lg font-semibold mb-2">Itens do Pedido:</h3><ul class="list-disc list-inside mb-6 space-y-1"></ul>';
+                const list = container.querySelector('ul');
+                for (const product in currentOrder) {
+                    list.innerHTML += `<li class="text-gray-700"><span class="font-semibold text-gray-900">${currentOrder[product]}x</span> ${product}</li>`;
+                }
+            } else {
+                container.innerHTML += '<p class="text-gray-600 mb-6">Nenhum item principal selecionado.</p>';
+            }
+
+            if (currentExtraItems.trim()) {
+                container.innerHTML += '<h3 class="text-lg font-semibold mb-2">Itens Extras:</h3>';
+                container.innerHTML += `<pre class="bg-gray-100 rounded-lg p-4 whitespace-pre-wrap font-sans text-gray-700">${currentExtraItems}</pre>`;
+            } else {
+                 container.innerHTML += '<p class="text-gray-600">Nenhum item extra adicionado.</p>';
+            }
+            
+            goToPage('page-review-order');
+        }
+
+        window.submitOrder = async () => {
+            showLoading(true);
+            
+            const orderData = {
+                filial: selectedFilial,
+                createdAt: isInSimulationMode ? new Date() : Timestamp.now(),
+                items: currentOrder,
+                extraItems: currentExtraItems,
+                status: 'Pendente' // NOVO: Status do pedido
+            };
+
+            const ordersCollectionPath = `artifacts/${appId}/public/data/pedidos`;
+
+            if (isInSimulationMode) {
+                console.log("SIMULAÇÃO: Enviando pedido...", orderData);
+                // Simula salvar na lista de histórico local
+                let history = JSON.parse(localStorage.getItem(`sim_history_${selectedFilial}`)) || [];
+                history.unshift({ ...orderData, id: `sim_${Date.now()}` });
+                localStorage.setItem(`sim_history_${selectedFilial}`, JSON.stringify(history));
+                
+                setTimeout(() => {
+                    showLoading(false);
+                    showAlert("Pedido enviado para aprovação (simulação)!", 2000);
+                    goToPage('page-menu');
+                }, 500);
+                return;
+            }
+
+            try {
+                const collectionRef = collection(db, ordersCollectionPath);
+                await addDoc(collectionRef, orderData);
+                showAlert("Pedido enviado para aprovação com sucesso!", 2000);
+                goToPage('page-menu');
+            } catch (error) {
+                console.error("Erro ao enviar pedido:", error);
+                showAlert("Erro ao enviar o pedido.");
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // --- Lógica de "Histórico" (Filial) ---
+        
+        window.renderHistory = async () => {
+            goToPage('page-history');
+            showLoading(true);
+            const container = document.getElementById('history-list-container');
+            container.innerHTML = '';
+            
+            const ordersCollectionPath = `artifacts/${appId}/public/data/pedidos`;
+            let orderHistory = [];
+
+            if (isInSimulationMode) {
+                console.log("SIMULAÇÃO: Carregando histórico...");
+                orderHistory = JSON.parse(localStorage.getItem(`sim_history_${selectedFilial}`)) || [];
+                // Converte a string de data de volta para objeto Date para formatação
+                orderHistory.forEach(order => {
+                    order.createdAt = new Date(order.createdAt);
+                });
+            } else {
+                try {
+                    const q = query(collection(db, ordersCollectionPath), where("filial", "==", selectedFilial));
+                    const querySnapshot = await getDocs(q);
+                    querySnapshot.forEach((doc) => {
+                        orderHistory.push({ id: doc.id, ...doc.data() });
+                    });
+                    // Ordena por data (mais recente primeiro)
+                    orderHistory.sort((a, b) => b.createdAt - a.createdAt);
+                } catch (error) {
+                    console.error("Erro ao buscar histórico:", error);
+                    showAlert("Erro ao carregar o histórico.");
+                    container.innerHTML = '<p class="text-red-500">Não foi possível carregar o histórico.</p>';
+                    showLoading(false);
+                    return;
+                }
+            }
+
+            showLoading(false);
+
+            if (orderHistory.length === 0) {
+                container.innerHTML = '<p class="text-gray-600 text-center text-lg py-10 bg-white rounded-lg shadow-md">Nenhum pedido encontrado no histórico.</p>';
+                return;
+            }
+
+            orderHistory.forEach(order => {
+                // Formata data
+                const orderDate = (order.createdAt instanceof Date) ? order.createdAt : order.createdAt.toDate();
+                const formattedDate = orderDate.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+                
+                // Formata status
+                const status = order.status || 'Pendente';
+                let statusClass = 'status-pendente';
+                let statusIcon = 'hourglass';
+                if (status === 'Aprovado') {
+                    statusClass = 'status-aprovado';
+                    statusIcon = 'check-circle';
+                } else if (status === 'Rejeitado') {
+                    statusClass = 'status-rejeitado';
+                    statusIcon = 'x-circle';
+                }
+
+                // Monta o cartão
+                let itemsHtml = '';
+                if (order.items && Object.keys(order.items).length > 0) {
+                    itemsHtml += '<h4 class="text-md font-semibold mt-4 mb-2">Itens:</h4><ul class="list-disc list-inside space-y-1">';
+                    for (const product in order.items) {
+                        itemsHtml += `<li class="text-gray-700"><span class="font-semibold text-gray-900">${order.items[product]}x</span> ${product}</li>`;
+                    }
+                    itemsHtml += '</ul>';
+                }
+
+                if (order.extraItems && order.extraItems.trim()) {
+                    itemsHtml += '<h4 class="text-md font-semibold mt-4 mb-2">Itens Extras:</h4>';
+                    itemsHtml += `<pre class="bg-gray-100 rounded-lg p-3 whitespace-pre-wrap font-sans text-sm text-gray-700">${order.extraItems}</pre>`;
+                }
+
+                const card = `
+                    <div class="bg-white rounded-lg shadow-lg overflow-hidden border-l-4 ${statusClass}">
+                        <div class="p-5">
+                            <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-3">
+                                <h3 class="text-xl font-bold text-gray-800">${formattedDate}</h3>
+                                <div class="flex items-center text-lg font-semibold px-4 py-1 rounded-full ${statusClass}">
+                                    <i data-lucide="${statusIcon}" class="w-5 h-5 mr-2"></i>
+                                    <span>Status: ${status}</span>
+                                </div>
+                            </div>
+                            
+                            ${itemsHtml}
+                            
+                            <button onclick="printOrderFromHistory('${order.id}')" class="mt-5 text-sm text-blue-600 bg-white border border-blue-600 hover:bg-blue-50 py-2 px-4 rounded-lg font-semibold transition-colors no-print">
+                                <i data-lucide="printer" class="inline-block -mt-1 mr-1 h-4 w-4"></i> Imprimir este Pedido
+                            </button>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += card;
+            });
+            
+            // Recria os ícones do Lucide
+            lucide.createIcons();
+        }
+        
+        // --- NOVO: Lógica do "Painel de Administrador" ---
+        
+        async function loadAdminPanel() {
+            showLoading(true);
+            const container = document.getElementById('admin-list-container');
+            const noOrdersMsg = document.getElementById('no-pending-orders');
+            container.innerHTML = ''; // Limpa a lista, mas mantém a mensagem "nenhum pedido"
+            noOrdersMsg.style.display = 'block';
+            
+            const ordersCollectionPath = `artifacts/${appId}/public/data/pedidos`;
+            let allOrders = [];
+
+            if (isInSimulationMode) {
+                console.log("SIMULAÇÃO: Carregando todos os pedidos para Admin...");
+                // Simulação: Pega o histórico de todas as filiais
+                for (const filial of Object.keys(FILIAL_PASSWORDS)) {
+                    const history = JSON.parse(localStorage.getItem(`sim_history_${filial}`)) || [];
+                    allOrders.push(...history);
+                }
+                // Converte datas
+                allOrders.forEach(order => {
+                    order.createdAt = new Date(order.createdAt);
+                });
+            } else {
+                try {
+                    // Busca TODOS os pedidos, sem filtro de filial
+                    const q = query(collection(db, ordersCollectionPath));
+                    const querySnapshot = await getDocs(q);
+                    querySnapshot.forEach((doc) => {
+                        allOrders.push({ id: doc.id, ...doc.data() });
+                    });
+                } catch (error) {
+                    console.error("Erro ao buscar todos os pedidos (Admin):", error);
+                    showAlert("Erro ao carregar os pedidos.");
+                    showLoading(false);
+                    return;
+                }
+            }
+
+            // Ordena por data (mais recente primeiro)
+            allOrders.sort((a, b) => b.createdAt - a.createdAt);
+            
+            // Filtra apenas os pendentes
+            const pendingOrders = allOrders.filter(order => order.status === 'Pendente');
+
+            showLoading(false);
+            
+            if (pendingOrders.length === 0) {
+                noOrdersMsg.style.display = 'block';
+                return;
+            }
+
+            noOrdersMsg.style.display = 'none'; // Esconde a mensagem "nenhum pedido"
+
+            pendingOrders.forEach(order => {
+                const orderDate = (order.createdAt instanceof Date) ? order.createdAt : order.createdAt.toDate();
+                const formattedDate = orderDate.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+                
+                let itemsHtml = '';
+                if (order.items && Object.keys(order.items).length > 0) {
+                    itemsHtml += '<h4 class="text-md font-semibold mt-4 mb-2">Itens:</h4><ul class="list-disc list-inside space-y-1">';
+                    for (const product in order.items) {
+                        itemsHtml += `<li class="text-gray-700"><span class="font-semibold text-gray-900">${order.items[product]}x</span> ${product}</li>`;
+                    }
+                    itemsHtml += '</ul>';
+                }
+                if (order.extraItems && order.extraItems.trim()) {
+                    itemsHtml += '<h4 class="text-md font-semibold mt-4 mb-2">Itens Extras:</h4>';
+                    itemsHtml += `<pre class="bg-gray-100 rounded-lg p-3 whitespace-pre-wrap font-sans text-sm text-gray-700">${order.extraItems}</pre>`;
+                }
+
+                const card = `
+                    <div class="bg-white rounded-lg shadow-lg border-l-4 border-yellow-400">
+                        <div class="p-5">
+                            <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-3">
+                                <div>
+                                    <h3 class="text-xl font-bold text-blue-600">Filial: ${order.filial}</h3>
+                                    <p class="text-sm text-gray-600">${formattedDate}</p>
+                                </div>
+                                <div class="text-lg font-semibold px-4 py-1 rounded-full bg-yellow-100 text-yellow-800 border border-yellow-300">
+                                    Pendente
+                                </div>
+                            </div>
+                            
+                            ${itemsHtml}
+                        </div>
+                        <footer class="bg-gray-50 p-4 flex flex-col sm:flex-row gap-3">
+                            <button onclick="approveOrder('${order.id}')" class="flex-1 text-white bg-green-600 hover:bg-green-700 py-2 px-4 rounded-lg font-semibold transition-colors shadow-md">
+                                <i data-lucide="check" class="inline-block -mt-1 mr-1 h-5 w-5"></i> Aprovar
+                            </button>
+                            <button onclick="openEditModal('${order.id}')" class="flex-1 text-white bg-blue-600 hover:bg-blue-700 py-2 px-4 rounded-lg font-semibold transition-colors shadow-md">
+                                <i data-lucide="edit-2" class="inline-block -mt-1 mr-1 h-5 w-5"></i> Editar
+                            </button>
+                            <button onclick="rejectOrder('${order.id}')" class="flex-1 text-white bg-red-600 hover:bg-red-700 py-2 px-4 rounded-lg font-semibold transition-colors shadow-md">
+                                <i data-lucide="x" class="inline-block -mt-1 mr-1 h-5 w-5"></i> Rejeitar
+                            </button>
+                        </footer>
+                    </div>
+                `;
+                container.innerHTML += card;
+            });
+            
+            lucide.createIcons();
+        }
+
+        async function updateOrderStatus(orderId, newStatus, data = {}) {
+            showLoading(true);
+            const orderDocPath = `artifacts/${appId}/public/data/pedidos/${orderId}`;
+            const updateData = { ...data, status: newStatus };
+            
+            if (isInSimulationMode) {
+                console.log(`SIMULAÇÃO: Atualizando pedido ${orderId} para ${newStatus}`, updateData);
+                // Atualiza o "banco de dados" de simulação de todas as filiais
+                for (const filial of Object.keys(FILIAL_PASSWORDS)) {
+                    let history = JSON.parse(localStorage.getItem(`sim_history_${filial}`)) || [];
+                    const orderIndex = history.findIndex(o => o.id === orderId);
+                    if (orderIndex > -1) {
+                        history[orderIndex].status = newStatus;
+                        if (data.items) history[orderIndex].items = data.items;
+                        if (data.extraItems) history[orderIndex].extraItems = data.extraItems;
+                        localStorage.setItem(`sim_history_${filial}`, JSON.stringify(history));
+                        break;
+                    }
+                }
+                
+                setTimeout(() => {
+                    showLoading(false);
+                    showAlert(`Pedido ${newStatus.toLowerCase()} (simulação)!`, 2000);
+                    loadAdminPanel(); // Recarrega o painel
+                }, 500);
+                return;
+            }
+
+            try {
+                const docRef = doc(db, orderDocPath);
+                await updateDoc(docRef, updateData);
+                showAlert(`Pedido ${newStatus.toLowerCase()} com sucesso!`, 2000);
+            } catch (error) {
+                console.error(`Erro ao atualizar status do pedido ${orderId}:`, error);
+                showAlert("Erro ao atualizar o pedido.");
+            } finally {
+                showLoading(false);
+                loadAdminPanel(); // Recarrega o painel de admin
+            }
+        }
+
+        window.approveOrder = (orderId) => {
+            updateOrderStatus(orderId, 'Aprovado');
+        }
+
+        window.rejectOrder = (orderId) => {
+            updateOrderStatus(orderId, 'Rejeitado');
+        }
+        
+        // --- NOVO: Lógica do Modal de Edição (Admin) ---
+        
+        window.openEditModal = async (orderId) => {
+            showLoading(true);
+            adminEditingOrderId = null;
+            
+            let orderData;
+            
+            if (isInSimulationMode) {
+                // Procura o pedido em todos os históricos de simulação
+                for (const filial of Object.keys(FILIAL_PASSWORDS)) {
+                    let history = JSON.parse(localStorage.getItem(`sim_history_${filial}`)) || [];
+                    const foundOrder = history.find(o => o.id === orderId);
+                    if (foundOrder) {
+                        orderData = foundOrder;
+                        break;
+                    }
+                }
+            } else {
+                try {
+                    const orderDocPath = `artifacts/${appId}/public/data/pedidos/${orderId}`;
+                    const docRef = doc(db, orderDocPath);
+                    const docSnap = await getDoc(docRef);
+                    if (docSnap.exists()) {
+                        orderData = docSnap.data();
+                    }
+                } catch (error) {
+                    console.error("Erro ao carregar dados do pedido para edição:", error);
+                    showAlert("Erro ao carregar pedido para edição.");
+                    showLoading(false);
+                    return;
+                }
+            }
+            
+            if (!orderData) {
+                showAlert("Pedido não encontrado.");
+                showLoading(false);
+                return;
+            }
+
+            // Popula o modal
+            const tableContainer = document.getElementById('modal-edit-items-table');
+            tableContainer.innerHTML = `
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-100">
+                        <tr>
+                            <th class="px-4 py-2 text-left text-xs font-bold text-gray-600 uppercase">Produto</th>
+                            <th class="px-4 py-2 text-left text-xs font-bold text-gray-600 uppercase">Qtd.</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200"></tbody>
+                </table>
+            `;
+            const tableBody = tableContainer.querySelector('tbody');
+            
+            if (orderData.items && Object.keys(orderData.items).length > 0) {
+                for (const product in orderData.items) {
+                    tableBody.innerHTML += `
+                        <tr>
+                            <td class="px-4 py-2 text-sm text-gray-800">${product}</td>
+                            <td class="px-4 py-2">
+                                <input type="number" min="0" value="${orderData.items[product]}"
+                                       class="modal-edit-quantity w-20 border border-gray-300 rounded-lg p-1 text-center"
+                                       data-product="${product}">
+                            </td>
+                        </tr>
+                    `;
+                }
+            } else {
+                tableBody.innerHTML = '<tr><td colspan="2" class="p-4 text-gray-500">Nenhum item principal neste pedido.</td></tr>';
+            }
+            
+            document.getElementById('modal-edit-extra-items').value = orderData.extraItems || "";
+            
+            // Define o ID do pedido que está sendo editado
+            adminEditingOrderId = orderId;
+            
+            showLoading(false);
+            document.getElementById('modal-admin-edit').style.display = 'flex';
+            lucide.createIcons(); // Recria ícones no modal
+        }
+
+        window.closeEditModal = () => {
+            document.getElementById('modal-admin-edit').style.display = 'none';
+            adminEditingOrderId = null;
+        }
+
+        window.saveOrderEdit = () => {
+            if (!adminEditingOrderId) return;
+
+            // Coleta os dados editados do modal
+            const newItems = {};
+            document.querySelectorAll('.modal-edit-quantity').forEach(input => {
+                const product = input.dataset.product;
+                const quantity = parseInt(input.value) || 0;
+                if (quantity > 0) {
+                    newItems[product] = quantity;
+                }
+            });
+            
+            const newExtraItems = document.getElementById('modal-edit-extra-items').value;
+            
+            const editedData = {
+                items: newItems,
+                extraItems: newExtraItems
+            };
+
+            // Chama a função de atualização, que salva os dados E aprova
+            updateOrderStatus(adminEditingOrderId, 'Aprovado', editedData);
+            closeEditModal();
+        }
+
+        // --- Lógica de Impressão ---
+        
+        window.printOrder = (orderItems, extraItems) => {
+            const printArea = document.getElementById('print-area');
+            
+            let itemsHtml = '';
+            if (orderItems && Object.keys(orderItems).length > 0) {
+                itemsHtml += '<table class="print-table"><thead><tr><th>Produto</th><th>Quantidade</th></tr></thead><tbody>';
+                for (const product in orderItems) {
+                    itemsHtml += `<tr><td>${product}</td><td>${orderItems[product]}</td></tr>`;
+                }
+                itemsHtml += '</tbody></table>';
+            } else {
+                itemsHtml = '<p>Nenhum item principal no pedido.</p>';
+            }
+            
+            let extraHtml = '';
+            if (extraItems && extraItems.trim()) {
+                extraHtml = `
+                    <h3>Itens Extras:</h3>
+                    <pre style="white-space: pre-wrap; font-family: Arial, sans-serif; background: #f4f4f4; padding: 10px; border-radius: 5px;">${extraItems}</pre>
+                `;
+            }
+
+            printArea.innerHTML = `
+                <div class="print-header">Pedido OdontoCompany</div>
+                <div class="print-filial">Filial: ${selectedFilial || 'N/A'}</div>
+                <div class="print-filial">Data: ${new Date().toLocaleString('pt-BR')}</div>
+                <hr style="margin: 20px 0;">
+                ${itemsHtml}
+                ${extraHtml}
+                <div class="print-footer">Documento gerado pelo Sistema de Controle de Pedidos</div>
+            `;
+            
+            window.print();
+        }
+
+        window.printOrderFromHistory = async (orderId) => {
+            showLoading(true);
+            let orderData;
+
+            if (isInSimulationMode) {
+                let history = JSON.parse(localStorage.getItem(`sim_history_${selectedFilial}`)) || [];
+                orderData = history.find(o => o.id === orderId);
+            } else {
+                try {
+                    const orderDocPath = `artifacts/${appId}/public/data/pedidos/${orderId}`;
+                    const docSnap = await getDoc(doc(db, orderDocPath));
+                    if (docSnap.exists()) {
+                        orderData = docSnap.data();
+                    }
+                } catch (error) {
+                    console.error("Erro ao buscar pedido para impressão:", error);
+                    showAlert("Erro ao carregar dados do pedido.");
+                    showLoading(false);
+                    return;
+                }
+            }
+            
+            showLoading(false);
+
+            if (orderData) {
+                // A função printOrder usa a variável global `selectedFilial`, então vamos garantir que está correta
+                const originalFilial = selectedFilial;
+                selectedFilial = orderData.filial; 
+                printOrder(orderData.items, orderData.extraItems);
+                selectedFilial = originalFilial; // Restaura
+            } else {
+                showAlert("Não foi possível encontrar os dados do pedido para impressão.");
+            }
+        }
+
+        // --- Inicialização ---
+        // Expõe funções globais necessárias
+        window.goToAdminLogin = goToAdminLogin;
+        window.handleAdminLogin = handleAdminLogin;
+        window.loadAdminPanel = loadAdminPanel;
+        window.approveOrder = approveOrder;
+        window.rejectOrder = rejectOrder;
+        window.openEditModal = openEditModal;
+        window.closeEditModal = closeEditModal;
+        window.saveOrderEdit = saveOrderEdit;
+        window.printOrderFromHistory = printOrderFromHistory;
+
+        // Expõe funções existentes
+        window.goToLogin = goToLogin;
+        window.handleFilialLogin = handleFilialLogin;
+        window.logout = logout;
+        window.saveStock = saveStock;
+        window.reviewOrder = reviewOrder;
+        window.submitOrder = submitOrder;
+        window.renderHistory = renderHistory;
+        window.printOrder = printOrder;
+
+        // Inicia a aplicação
+        initializeFirebase();
+    </script>
+
+</body>
+</html>
